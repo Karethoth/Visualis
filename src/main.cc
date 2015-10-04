@@ -24,7 +24,7 @@ using namespace std;
 
 
 
-// owner<T> pointer helper
+// owner<T> pointer alias
 template<typename T>
 using owner = T;
 
@@ -51,22 +51,29 @@ using can_call = decltype(can_call_test::f<F>( 0 ));
 template<typename F>
 struct Defer
 {
-	Defer( F func ) : call_when_destroyed( func )
+	Defer( F func )
+	: is_broken(false),
+	  call_when_destroyed(func)
 	{
 	}
 
 
-	// Allow returning an instance of Defer by a move.
-	Defer( Defer&& def ) : call_when_destroyed(def.call_when_destroyed)
+	Defer( Defer&& old )
+	: is_broken(false),
+	  call_when_destroyed(old.call_when_destroyed)
 	{
-		// If trying to move in other situations, this will always fail
-		static_assert(false, "Defer<F> - Can't be constructed from an universal reference!");
+		old.is_broken = true;
 	}
 
 
 	~Defer() noexcept
 	{
-		static_assert(can_call<F>{}, "Defer<F> - F has to be a callable type!");
+		static_assert( can_call<F>{}, "Defer<F> - F has to be a callable type!" );
+
+		if( is_broken )
+		{
+			return;
+		}
 
 		try
 		{
@@ -86,6 +93,7 @@ struct Defer
 
 private:
 	const F call_when_destroyed;
+	bool is_broken;
 };
 
 
@@ -124,6 +132,7 @@ struct Window
 	sdl2::WindowPtr   window;
 	sdl2::RendererPtr renderer;
 
+
 	Window()
 	{
 		// Create the window
@@ -136,15 +145,14 @@ struct Window
 
 		if( window_ptr )
 		{
-			std::cout << "Window created\n";
 			window = sdl2::WindowPtr( window_ptr );
 		}
 		else
 		{
-			throw std::runtime_error(
-				"Window::Window() - SDL_CreateWindow() failed: " +
-				std::string(SDL_GetError())
-			);
+			std::cerr << "Window::Window() - SDL_CreateWindow() failed: "
+			          << SDL_GetError() << std::endl;
+
+			return;
 		}
 
 
@@ -152,22 +160,23 @@ struct Window
 		auto renderer_ptr = SDL_CreateRenderer( window_ptr, 0, SDL_RENDERER_ACCELERATED );
 		if( renderer_ptr )
 		{
-			std::cout << "Renderer created\n";
 			renderer = sdl2::RendererPtr( renderer_ptr );
 		}
 		else
 		{
-			throw std::runtime_error(
-				"Window::Window() - SDL_CreateRenderer() failed: " +
-				std::string( SDL_GetError() )
-			);
+			std::cerr << "Window::Window() - SDL_CreateRenderer() failed: "
+			          << SDL_GetError() << std::endl;
+
+			return;
 		}
 	}
+
 
 	bool is_initialized()
 	{
 		return !!window && !!renderer;
 	}
+
 
 	// Delete potentially dangerous constructors and operators
 	Window( Window& )             = delete;
@@ -194,14 +203,20 @@ int main()
 	// Set the GUI up
 	Window window;
 
-	std::cout << "Window.is_initialized(): " << window.is_initialized() << std::endl;
+	auto window_initialized = window.is_initialized();
+	std::cout << "Window.is_initialized(): " << window_initialized << std::endl;
 
-	bool should_quit = false;
+	if( !window_initialized )
+	{
+		return 1;
+	}
 
 
 	// Start the main loop
 	SDL_Event event;
 
+
+	bool should_quit = false;
 	while( !should_quit )
 	{
 		SDL_PollEvent( &event );
