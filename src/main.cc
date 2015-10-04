@@ -3,11 +3,9 @@
 #include <memory>
 #include <vector>
 #include <exception>
-#include <type_traits>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_image.h>
+#include "sdl2.hh"
+#include "common_tools.hh"
 
 
 #ifdef _WIN32
@@ -19,111 +17,6 @@
 #ifdef main
 #undef main
 #endif
-
-using namespace std;
-
-
-
-// owner<T> pointer alias
-template<typename T>
-using owner = T;
-
-
-
-// can_call
-struct can_call_test
-{
-	template<typename F>
-	static decltype(std::declval<F>()(), std::true_type())
-	f( int );
-
-	template<typename F, typename... A>
-	static std::false_type
-	f( ... );
-};
-
-template<typename F, typename...A>
-using can_call = decltype(can_call_test::f<F>( 0 ));
-
-
-
-// Defer
-template<typename F>
-struct Defer
-{
-	Defer( F func )
-	: is_broken(false),
-	  call_when_destroyed(func)
-	{
-	}
-
-
-	Defer( Defer&& old )
-	: is_broken(false),
-	  call_when_destroyed(old.call_when_destroyed)
-	{
-		old.is_broken = true;
-	}
-
-
-	~Defer() noexcept
-	{
-		static_assert( can_call<F>{}, "Defer<F> - F has to be a callable type!" );
-
-		if( is_broken )
-		{
-			return;
-		}
-
-		try
-		{
-			call_when_destroyed();
-		}
-		catch( ... )
-		{
-			std::cout << "Defer<F> - Ran into an exception when called the deferred func!" << std::endl;
-		}
-	}
-
-	// Delete dangerous constructors and operators
-	Defer( Defer& )             = delete;
-	Defer& operator=( Defer& )  = delete;
-	Defer& operator=( Defer&& ) = delete;
-
-
-private:
-	const F call_when_destroyed;
-	bool is_broken;
-};
-
-
-
-// Helper for making defers
-template <typename F>
-constexpr auto make_defer( F func )
-{
-	// This is what we need the Defer move constructor to exist for
-	return Defer<decltype(func)>{ func };
-}
-
-
-
-// Wrapping SDL2 stuff
-namespace sdl2
-{
-	struct Deleter
-	{
-		void operator()( SDL_Surface  *ptr ) { if( ptr ) SDL_FreeSurface( ptr ); }
-		void operator()( SDL_Window   *ptr ) { if( ptr ) SDL_DestroyWindow( ptr ); }
-		void operator()( SDL_Texture  *ptr ) { if( ptr ) SDL_DestroyTexture( ptr ); }
-		void operator()( SDL_Renderer *ptr ) { if( ptr ) SDL_DestroyRenderer( ptr ); }
-	};
-
-	using SurfacePtr  = std::unique_ptr<SDL_Surface,  Deleter>;
-	using WindowPtr   = std::unique_ptr<SDL_Window,   Deleter>;
-	using TexturePtr  = std::unique_ptr<SDL_Texture,  Deleter>;
-	using RendererPtr = std::unique_ptr<SDL_Renderer, Deleter>;
-}
 
 
 
@@ -186,6 +79,8 @@ struct Window
 };
 
 
+using namespace std;
+
 
 int main()
 {
@@ -197,26 +92,24 @@ int main()
 	}
 
 	// Call SDL_Quit at the end
-	auto sdl_defer_quit = make_defer( [](){ SDL_Quit(); } );
+	auto sdl_defer_quit = ct::make_defer( [](){
+		SDL_Quit();
+	} );
 
 
 	// Set the GUI up
 	Window window;
 
-	auto window_initialized = window.is_initialized();
-	std::cout << "Window.is_initialized(): " << window_initialized << std::endl;
-
-	if( !window_initialized )
+	if( window.is_initialized() )
 	{
 		return 1;
 	}
 
 
 	// Start the main loop
+	bool should_quit = false;
 	SDL_Event event;
 
-
-	bool should_quit = false;
 	while( !should_quit )
 	{
 		SDL_PollEvent( &event );
@@ -225,9 +118,11 @@ int main()
 		{
 			if( event.key.keysym.sym == SDLK_ESCAPE )
 			{
-				break;
+				should_quit = true;
 			}
 		}
+
+		SDL_RenderPresent( window.renderer.get() );
 	}
 
 
