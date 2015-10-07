@@ -5,20 +5,24 @@
 
 
 using namespace std;
+using namespace gui;
 
 
-gui::Window::Window()
+Window::Window()
+: closed(false), sdl_id(0), width(460), height(320)
 {
 	// Create the window
 	auto window_ptr = SDL_CreateWindow(
 		"Visualis",
-		0, 0,
-		460, 320,
+		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+		width, height,
 		SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN
-		);
+	);
 
 	if( window_ptr )
 	{
+		sdl_id = SDL_GetWindowID( window_ptr );
+		std::cout << "Created window with id " << sdl_id << std::endl;
 		window = sdl2::WindowPtr( window_ptr );
 	}
 	else
@@ -46,7 +50,75 @@ gui::Window::Window()
 }
 
 
-bool gui::Window::is_initialized() const
+
+Window::Window( Window&& other )
 {
-	return !!window && !!renderer;
+	using std::swap;
+	swap( window,   other.window );
+	swap( renderer, other.renderer );
+	swap( sdl_id,   other.sdl_id );
+	swap( closed,   other.closed );
+
+	cout << "Window move constructed" << endl;
 }
+
+
+
+Window& Window::operator=( Window&& other )
+{
+	using std::swap;
+	swap( window,   other.window );
+	swap( renderer, other.renderer );
+	swap( sdl_id,   other.sdl_id );
+	swap( closed,   other.closed );
+
+	cout << "Window moved" << endl;
+	return *this;
+}
+
+
+
+Window::~Window()
+{
+	cout << "Closed window" << endl;
+}
+
+
+
+bool Window::is_initialized() const
+{
+	return !closed && !!window && !!renderer;
+}
+
+
+
+void Window::handle_sdl_event( const SDL_Event &e )
+{
+	switch( e.window.event )
+	{
+		case SDL_WINDOWEVENT_SHOWN:
+		case SDL_WINDOWEVENT_HIDDEN:
+		case SDL_WINDOWEVENT_EXPOSED:
+		case SDL_WINDOWEVENT_MOVED:
+		case SDL_WINDOWEVENT_MINIMIZED:
+		case SDL_WINDOWEVENT_MAXIMIZED:
+		case SDL_WINDOWEVENT_RESTORED:
+		case SDL_WINDOWEVENT_ENTER:
+		case SDL_WINDOWEVENT_LEAVE:
+		case SDL_WINDOWEVENT_FOCUS_GAINED:
+		case SDL_WINDOWEVENT_FOCUS_LOST:
+			break;
+
+		case SDL_WINDOWEVENT_RESIZED:
+		case SDL_WINDOWEVENT_SIZE_CHANGED:
+			width = e.window.data1;
+			height = e.window.data2;
+			cout << "SIZE CHANGED" << endl;
+			break;
+
+		case SDL_WINDOWEVENT_CLOSE:
+			closed = true;
+			break;
+	}
+}
+

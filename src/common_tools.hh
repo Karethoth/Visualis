@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-namespace ct
+namespace tools
 {
 
 // owner<T> pointer alias

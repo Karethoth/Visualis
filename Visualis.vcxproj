@@ -117,6 +117,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common_tools.hh" />
+    <ClInclude Include="src\globals.hh" />
     <ClInclude Include="src\sdl2.hh" />
     <ClInclude Include="src\window.hh" />
   </ItemGroup>

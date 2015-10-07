@@ -1,6 +1,7 @@
 #include "sdl2.hh"
 #include "common_tools.hh"
 #include "window.hh"
+#include "globals.hh"
 
 #include <iostream>
 #include <mutex>
@@ -10,12 +11,11 @@
 
 
 #ifdef _WIN32
+#include <windows.h>
+
 #pragma comment( lib, "SDL2.lib" )
 #pragma comment( lib, "SDL2_ttf.lib" )
 #pragma comment( lib, "SDL2_image.lib" )
-
-#include <windows.h>
-
 #endif
 
 
@@ -27,11 +27,56 @@
 using namespace std;
 
 
+// Set up the Globals
+bool Globals::should_quit = false;
+
+vector<gui::Window> Globals::windows{};
+mutex Globals::windows_mutex = {};
+
+
+
+
+void handle_sdl_event( const SDL_Event &e )
+{
+	if( e.type == SDL_QUIT )
+	{
+		Globals::should_quit = true;
+	}
+
+	else if( e.type == SDL_KEYDOWN )
+	{
+		if( e.key.keysym.sym == SDLK_ESCAPE )
+		{
+			Globals::should_quit = true;
+		}
+	}
+
+	else if( e.type == SDL_WINDOWEVENT )
+	{
+		auto window_id = e.window.windowID;
+
+		lock_guard<mutex> windows_lock{ Globals::windows_mutex };
+		for( auto& window : Globals::windows )
+		{
+			if( window.sdl_id == window_id )
+			{
+				window.handle_sdl_event( e );
+				return;
+			}
+		}
+
+		cerr << "Unhandled SDL_WINDOWEVENT, target window "
+		     << window_id << " not found" << endl;
+	}
+}
+
+
+
 int main()
 {
 	// Wait for user input at the end when in debug mode
 	#ifdef  _DEBUG
-	auto defer_enter_to_quit = ct::make_defer( []()
+	auto defer_enter_to_quit = tools::make_defer( []()
 	{
 		cout << endl << "Press enter to quit... ";
 		cin.ignore();
@@ -50,18 +95,26 @@ int main()
 	}
 
 	// Call SDL_Quit at the end
-	auto defer_sdl_quit = ct::make_defer( [](){
+	auto defer_sdl_quit = tools::make_defer( [](){
 		SDL_Quit();
 	} );
 
 
-	// Create the window
-	gui::Window window;
-
-	if( !window.is_initialized() )
+	// Create a window
+	Globals::windows.emplace_back();
+	if( Globals::windows.size() <= 0 ||
+	   !Globals::windows[0].is_initialized() )
 	{
 		return 1;
 	}
+
+	// Clear windows automatically at the end,
+	// while the SDL context is still okay
+	auto defer_close_windows = tools::make_defer( []()
+	{
+		lock_guard<mutex> windows_lock{ Globals::windows_mutex };
+		Globals::windows.clear();
+	} );
 
 
 	// If on windows and not in debug mode, detach the console
@@ -75,22 +128,29 @@ int main()
 	/* Start the main loop */
 
 
-	bool should_quit = false;
 	SDL_Event event;
 
-	while( !should_quit )
+	while( !Globals::should_quit )
 	{
-		SDL_PollEvent( &event );
-
-		if( event.type == SDL_KEYDOWN )
+		while( SDL_PollEvent( &event ) )
 		{
-			if( event.key.keysym.sym == SDLK_ESCAPE )
-			{
-				should_quit = true;
-			}
+			handle_sdl_event( event );
 		}
 
-		SDL_RenderPresent( window.renderer.get() );
+		// Remove closed windows and render all windows
+		lock_guard<mutex> windows_lock{ Globals::windows_mutex };
+		for( auto it = Globals::windows.begin();
+		     it != Globals::windows.end(); )
+		{
+			if( (*it).closed )
+			{
+				it = Globals::windows.erase( it );
+				continue;
+			}
+
+			SDL_RenderPresent( (*it).renderer.get() );
+			++it;
+		}
 	}
 
 
