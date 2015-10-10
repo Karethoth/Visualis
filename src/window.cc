@@ -113,7 +113,6 @@ void Window::handle_sdl_event( const SDL_Event &e )
 		case SDL_WINDOWEVENT_SIZE_CHANGED:
 			width = e.window.data1;
 			height = e.window.data2;
-			cout << "SIZE CHANGED" << endl;
 			break;
 
 		case SDL_WINDOWEVENT_CLOSE:
