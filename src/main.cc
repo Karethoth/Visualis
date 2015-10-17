@@ -2,15 +2,19 @@
 #include "common_tools.hh"
 #include "window.hh"
 #include "globals.hh"
+#include "sgf.hh"
 
-#include <iostream>
 #include <mutex>
 #include <memory>
 #include <vector>
+#include <fstream>
+#include <iostream>
 #include <exception>
 
 
 #ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
 #include <windows.h>
 
 #pragma comment( lib, "SDL2.lib" )
@@ -72,16 +76,61 @@ void handle_sdl_event( const SDL_Event &e )
 
 
 
+auto read_file_contents( const wstring& filename )
+{
+	ifstream in( filename, ios_base::in | ios_base::binary );
+	if( !in.is_open() )
+	{
+		throw runtime_error( "Couldn't open the file!" );
+	}
+
+	wstring str{ istreambuf_iterator<char>( in ),
+	             istreambuf_iterator<char>() };
+
+	return str;
+}
+
+
+
 int main()
 {
 	// Wait for user input at the end when in debug mode
 	#ifdef  _DEBUG
 	auto defer_enter_to_quit = tools::make_defer( []()
 	{
-		cout << endl << "Press enter to quit... ";
+		wcout << endl << "Press enter to quit... ";
 		cin.ignore();
 	} );
 	#endif
+
+	#ifdef _WIN32
+	int const newMode = _setmode( _fileno( stdout ), _O_U8TEXT );
+	#endif
+
+
+	try
+	{
+		auto data = read_file_contents( L"in.sgf" );
+
+		// Get rid of the BOM if it's there
+		if( data[0] == 0xffef )
+		{
+			data = data.substr( 3 );
+		}
+
+
+		auto root = sgf::read_game_tree( data );
+
+		sgf::print_game_tree( root );
+
+		auto comment = root.properties[L"C"].front();
+	}
+	catch( ... )
+	{
+		wcout << "Ran into error." << endl;
+	}
+
+	return 0;
 
 
 	/* Set up the graphics */
