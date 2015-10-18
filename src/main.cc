@@ -76,7 +76,7 @@ void handle_sdl_event( const SDL_Event &e )
 
 
 
-auto read_file_contents( const wstring& filename )
+auto read_file_contents( const string& filename )
 {
 	ifstream in( filename, ios_base::in | ios_base::binary );
 	if( !in.is_open() )
@@ -110,14 +110,13 @@ int main()
 
 	try
 	{
-		auto data = read_file_contents( L"in.sgf" );
+		auto data = read_file_contents( "in.sgf" );
 
 		// Get rid of the BOM if it's there
-		if( data[0] == 0xffef )
+		if( data[0] == 0xffef || data[0] == -17 )
 		{
 			data = data.substr( 3 );
 		}
-
 
 		auto root = sgf::read_game_tree( data );
 
@@ -125,10 +124,14 @@ int main()
 
 		auto comment = root.properties[L"C"].front();
 	}
-	catch( ... )
+	catch( std::runtime_error &e )
 	{
-		wcout << "Ran into error." << endl;
+		wcout << "Ran into an error: " << e.what() << endl;
 	}
+        catch( ... )
+        {
+		wcout << "Ran into an unhandled exception." << endl;
+        }
 
 	return 0;
 

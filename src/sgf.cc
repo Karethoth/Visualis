@@ -13,7 +13,7 @@ using namespace std;
 
 
 
-auto ltrim( wstring &s )
+wstring ltrim( wstring s )
 {
 	s.erase(
 		s.begin(),
@@ -29,7 +29,7 @@ auto ltrim( wstring &s )
 
 
 
-auto rtrim( wstring &s )
+wstring rtrim( wstring s )
 {
 	s.erase(
 		std::find_if(
@@ -45,7 +45,7 @@ auto rtrim( wstring &s )
 
 
 
-auto trim( wstring &s )
+wstring trim( wstring s )
 {
 	return ltrim( rtrim( s ) );
 }
@@ -277,8 +277,6 @@ void print_node( const Node &node, size_t level=0 )
 	{
 		indent += ' ';
 	}
-
-	wcout << indent << "." << endl;
 
 	for( auto& property : node.properties )
 	{
