@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 #include <type_traits>
 
 namespace tools
@@ -91,5 +92,23 @@ constexpr auto make_defer( F func )
 	return Defer<decltype(func)>{ func };
 }
 
-}; // namespace ct
+
+// Directory listing
+enum DirectoryItemType
+{
+	DIRECTORY,
+	FILE
+};
+
+struct DirectoryItem
+{
+	DirectoryItemType type;
+	std::string       name;
+	size_t            size_h;
+	size_t            size_l;
+};
+
+std::vector<DirectoryItem> get_directory_listing( const std::string& path );
+
+}; // namespace tools
 

@@ -71,8 +71,8 @@ namespace sgf
 
 	struct Point
 	{
-		int x;
-		int y;
+		size_t x;
+		size_t y;
 	};
 
 	struct PropertyValue
@@ -93,7 +93,7 @@ namespace sgf
 	template<typename T>
 	T property_value_to( const PropertyValue &val )
 	{
-		std::stringstream ss( val.value );
+		std::wstringstream ss( val.value );
 		T ret;
 		ss >> ret;
 		return ret;

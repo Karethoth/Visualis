@@ -318,25 +318,25 @@ void sgf::print_game_tree( const Node &root )
 template<>
 Point sgf::property_value_to<Point>( const PropertyValue &val )
 {
-	Point point{ -1, -1 };
-
 	if( val.value.size() != 2 )
 	{
 		if( val.value.size() == 0 )
 		{
 			// Pass, most likely
-			return point;
+			return { 0, 0 };
 		}
 
 		throw std::runtime_error( "Not a valid point property value" );
 	}
+
+	Point point{ 0, 0 };
 
 	wchar_t x = val.value[0];
 	wchar_t y = val.value[1];
 
 	if( x >= 'a' && x <= 'z' )
 	{
-		point.x = x - 'a';
+		point.x = x - 'a' + 1;
 	}
 	else if( x >= 'A' && x <= 'Z' )
 	{
@@ -345,11 +345,11 @@ Point sgf::property_value_to<Point>( const PropertyValue &val )
 
 	if( y >= 'a' && y <= 'z' )
 	{
-		point.y = y - 'a';
+		point.y = y - 'a' + 1;
 	}
 	else if( y >= 'A' && y <= 'Z' )
 	{
-		point.y = y - 'A' + 26;
+		point.y = y - 'A' + 27;
 	}
 
 	return point;

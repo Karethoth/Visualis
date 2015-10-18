@@ -112,6 +112,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\common_tools.cc" />
+    <ClCompile Include="src\goban.cc" />
     <ClCompile Include="src\main.cc" />
     <ClCompile Include="src\sgf.cc" />
     <ClCompile Include="src\window.cc" />
@@ -119,6 +121,7 @@
   <ItemGroup>
     <ClInclude Include="src\common_tools.hh" />
     <ClInclude Include="src\globals.hh" />
+    <ClInclude Include="src\goban.hh" />
     <ClInclude Include="src\sdl2.hh" />
     <ClInclude Include="src\sgf.hh" />
     <ClInclude Include="src\window.hh" />

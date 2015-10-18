@@ -21,12 +21,12 @@ Window::Window()
 	if( window_ptr )
 	{
 		sdl_id = SDL_GetWindowID( window_ptr );
-		std::cout << "Created window with id " << sdl_id << std::endl;
+		std::wcout << "Created window with id " << sdl_id << std::endl;
 		window = sdl2::WindowPtr( window_ptr );
 	}
 	else
 	{
-		cerr << "Window::Window() - SDL_CreateWindow() failed: "
+		wcerr << "Window::Window() - SDL_CreateWindow() failed: "
 		     << SDL_GetError() << endl;
 
 		return;
@@ -41,7 +41,7 @@ Window::Window()
 	}
 	else
 	{
-		cerr << "Window::Window() - SDL_CreateRenderer() failed: "
+		wcerr << "Window::Window() - SDL_CreateRenderer() failed: "
 		     << SDL_GetError() << endl;
 
 		return;
@@ -58,7 +58,7 @@ Window::Window( Window&& other )
 	swap( sdl_id,   other.sdl_id );
 	swap( closed,   other.closed );
 
-	cout << "Window move constructed" << endl;
+	wcout << "Window move constructed" << endl;
 }
 
 
@@ -71,7 +71,7 @@ Window& Window::operator=( Window&& other )
 	swap( sdl_id,   other.sdl_id );
 	swap( closed,   other.closed );
 
-	cout << "Window moved" << endl;
+	wcout << "Window moved" << endl;
 	return *this;
 }
 
@@ -79,7 +79,7 @@ Window& Window::operator=( Window&& other )
 
 Window::~Window()
 {
-	cout << "Closed window" << endl;
+	wcout << "Closed window" << endl;
 }
 
 
