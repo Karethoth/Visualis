@@ -51,8 +51,6 @@ vector<vector<Stone>> go::Goban::form_groups( vector<Stone> stones )
 	vector<vector<Stone>> groups;
 	vector<Stone> current_group;
 
-	wcout << endl;
-
 	while( stones.size() > 0 )
 	{
 		// Grab one stone 

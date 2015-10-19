@@ -12,6 +12,7 @@
 #include <codecvt>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 #include <exception>
 
 
@@ -145,6 +146,8 @@ int main( int argc, char **argv )
 		return 1;
 	}
 
+	srand( static_cast<unsigned>( time( 0 ) ) );
+
 	// Wait for user input at the end when in debug mode
 	#ifdef  _DEBUG
 	auto defer_enter_to_quit = tools::make_defer( []()
@@ -193,6 +196,27 @@ int main( int argc, char **argv )
 		lock_guard<mutex> windows_lock{ Globals::windows_mutex };
 		Globals::windows.clear();
 	} );
+
+
+	// Create the board texture
+	auto board_surface = IMG_Load( "data/wood.jpg" );
+	if( !board_surface )
+	{
+		wcerr << "Couldn't load wood image" << endl;
+		return 1;
+	}
+
+	auto board_texture = sdl2::TexturePtr(
+		SDL_CreateTextureFromSurface(
+			Globals::windows[0].renderer.get(),
+			board_surface
+		)
+	);
+	if( !board_texture.get() )
+	{
+		wcerr << "Couldn't create wood texture" << endl;
+		return 1;
+	}
 
 
 	// If on windows and not in debug mode, detach the console
@@ -245,6 +269,9 @@ int main( int argc, char **argv )
 	{
 		wcout << "Ran into an unhandled exception." << endl;
 	}
+
+	// Shuffle the order of the files
+	std::random_shuffle( remaining_files.begin(), remaining_files.end() );
 
 
 	// Grab the first game
@@ -382,9 +409,28 @@ int main( int argc, char **argv )
 		double step_size = (window.width < window.height ?
 			window.width : window.height) / (board_size + 1);
 
+		auto stone_size = step_size - step_size / 5;
+
 		SDL_SetRenderDrawColor( window.renderer.get(), 0, 0, 0, 255 );
 		SDL_RenderClear( window.renderer.get() );
-		SDL_SetRenderDrawColor( window.renderer.get(), 127, 0, 0, 255 );
+		SDL_SetRenderDrawColor( window.renderer.get(), 0, 0, 0, 255 );
+
+		SDL_Rect board_rect =
+		{
+			step_size/2,
+			step_size/2,
+			board_size * step_size,
+			board_size * step_size
+		};
+
+		SDL_RenderCopy(
+			window.renderer.get(),
+			board_texture.get(),
+			nullptr,
+			&board_rect
+		);
+
+		// Render lines
 
 		for( size_t y = 1; y <= board_size; y++ )
 		{
@@ -408,6 +454,7 @@ int main( int argc, char **argv )
 			);
 		}
 
+		// Render stones
 
 		auto& stones = goban.get_board();
 		for( auto& stone : stones )
@@ -419,21 +466,19 @@ int main( int argc, char **argv )
 
 			else if( stone.side == go::Side::BLACK )
 			{
-				SDL_SetRenderDrawColor( window.renderer.get(), 255, 0, 0, 255 );
+				SDL_SetRenderDrawColor( window.renderer.get(), 0, 0, 0, 255 );
 			}
 			else
 			{
 				SDL_SetRenderDrawColor( window.renderer.get(), 255, 255, 255, 255 );
 			}
 
-			auto stone_size = step_size - step_size / 5;
-
 			SDL_Rect stone_rect
 			{
-				(stone.x+1) * step_size - stone_size / 2,
-				(stone.y+1) * step_size - stone_size / 2,
-				stone_size,
-				stone_size
+				static_cast<int>((stone.x+1) * step_size - stone_size / 2),
+				static_cast<int>((stone.y+1) * step_size - stone_size / 2),
+				static_cast<int>(stone_size),
+				static_cast<int>(stone_size)
 			};
 
 			SDL_RenderFillRect( window.renderer.get(), &stone_rect );
