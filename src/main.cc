@@ -199,7 +199,9 @@ int main( int argc, char **argv )
 
 
 	// Create the board texture
-	auto board_surface = IMG_Load( "data/wood.jpg" );
+	auto board_surface = sdl2::SurfacePtr(
+		IMG_Load( "data/wood.jpg" )
+	);
 	if( !board_surface )
 	{
 		wcerr << "Couldn't load wood image" << endl;
@@ -209,10 +211,10 @@ int main( int argc, char **argv )
 	auto board_texture = sdl2::TexturePtr(
 		SDL_CreateTextureFromSurface(
 			Globals::windows[0].renderer.get(),
-			board_surface
+			board_surface.get()
 		)
 	);
-	if( !board_texture.get() )
+	if( !board_texture )
 	{
 		wcerr << "Couldn't create wood texture" << endl;
 		return 1;
