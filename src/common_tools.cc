@@ -7,8 +7,10 @@ using namespace tools;
 #include <windows.h>
 
 
-vector<DirectoryItem> tools::get_directory_listing( const string& path )
+vector<DirectoryItem> tools::get_directory_listing( string path )
 {
+	path += "*";
+
 	HANDLE                handle;
 	WIN32_FIND_DATAA      data;
 	vector<DirectoryItem> items;
@@ -58,9 +60,34 @@ vector<DirectoryItem> tools::get_directory_listing( const string& path )
 
 #else
 
-vector<string> tools::get_directory_listing( const string& path )
+#include <dirent.h>
+#include <sys/types.h>
+
+vector<DirectoryItem> tools::get_directory_listing( string path )
 {
-	static_assert( false, "get_directory_listing not implemented!" );
+  vector<DirectoryItem> items;
+
+  DIR *handle;
+  dirent *data;
+  handle = opendir( path.c_str() );
+  if( handle == nullptr )
+  {
+    throw runtime_error( "Couldn't get directory listing for '" + path + "'" );
+  }
+
+  while( (data = readdir( handle )) != nullptr )
+  {
+    auto type = (data->d_type == DT_DIR ? DirectoryItemType::DIRECTORY : DirectoryItemType::FILE);
+    
+    items.push_back({
+        type,
+        data->d_name,
+        0, // Filesize is just ignored, atm
+        0
+    });
+  }
+
+  return items;
 }
 
 #endif

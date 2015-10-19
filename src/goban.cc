@@ -276,7 +276,7 @@ const std::vector<Stone>& go::Goban::get_board()
 
 void go::Goban::clear()
 {
-	board = std::vector<Stone>( (board_size * board_size), {} );
+	board = std::vector<Stone>( (board_size * board_size), Stone{} );
 	size_t index = 0;
 	for( auto &stone : board )
 	{

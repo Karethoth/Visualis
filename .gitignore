@@ -1,5 +1,4 @@
 a.out
-in.sgf
 visualis
 visualis.exe
 *.vs
@@ -7,6 +6,7 @@ visualis.exe
 *.opensdf
 *.filters
 *.vcxproj.user
+*.sgf
 bin
 build
 Debug

@@ -7,6 +7,7 @@
 
 #include <mutex>
 #include <memory>
+#include <thread>
 #include <vector>
 #include <locale>
 #include <codecvt>
@@ -243,7 +244,7 @@ int main( int argc, char **argv )
 			vector<string> new_directories;
 			for( auto& directory : remaining_directories )
 			{
-				auto items = tools::get_directory_listing( directory + "/*" );
+				auto items = tools::get_directory_listing( directory + "/" );
 				for( auto& item : items )
 				{
 					if( item.type == tools::DirectoryItemType::DIRECTORY )
@@ -419,10 +420,10 @@ int main( int argc, char **argv )
 
 		SDL_Rect board_rect =
 		{
-			step_size/2,
-			step_size/2,
-			board_size * step_size,
-			board_size * step_size
+			static_cast<int>(step_size/2.f),
+			static_cast<int>(step_size/2.f),
+			static_cast<int>(board_size * step_size),
+			static_cast<int>(board_size * step_size)
 		};
 
 		SDL_RenderCopy(

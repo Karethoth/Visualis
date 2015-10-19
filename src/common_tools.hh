@@ -108,7 +108,7 @@ struct DirectoryItem
 	size_t            size_l;
 };
 
-std::vector<DirectoryItem> get_directory_listing( const std::string& path );
+std::vector<DirectoryItem> get_directory_listing( std::string path );
 
 }; // namespace tools
 
